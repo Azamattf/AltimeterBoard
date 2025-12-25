@@ -68,6 +68,23 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=XQYBZMSZ
 
+[Document2]
+DocumentPath=2pinClipHeader.SchLib
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=0
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+DocumentUniqueId=LMCUAFZQ
+
 [Configuration1]
 Name=Sources
 ParameterCount=0
