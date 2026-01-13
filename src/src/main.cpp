@@ -10,21 +10,21 @@ const int DIO_PIN = 15;  // Data pin
 const int CAL_BUTTON_PIN = 2; // Calibration button 
 const int Alarm_Pin = 3; 
 
-MS5611 ms5611(0x76); // Use address 0x77 since PS/SDO is at 3V3
+MS5611 ms5611(0x76); // 0x77 since PS is at 3V3
 TM1637TinyDisplay display(CLK_PIN, DIO_PIN);
 
 float referencePressure = 0;
 
 // Alarm limits
 const float warn_HIGH = 30.0; // meters
-const float warn_LOW = -10.0;  // meters
+const float warn_LOW = -1.0;  // meters
 const float Danger_HIGH = 40.0; // meters
-const float Danger_LOW = -15.0;  // meters
+const float Danger_LOW = -10.0;  // meters
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial && millis() < 10000);
-  Serial.println("=== Altimeter Starting ===");
+  while (!Serial && millis() < 5000);
+  Serial.println("\n==== Altimeter Starting ====\n");
   
   pinMode(CAL_BUTTON_PIN, INPUT_PULLUP);
   pinMode(Alarm_Pin, OUTPUT);
@@ -57,7 +57,7 @@ void setup() {
   Serial.println("Calibrating...");
 
   // Wait for sensor to stabilize and take multiple readings
-  delay(500);
+  delay(1000);
   float pressureSum = 0;
   for (int i = 0; i < 10; i++) {
     ms5611.read();
@@ -76,7 +76,7 @@ void setup() {
   Serial.println(" mbar");
   
   delay(1000); // Show "CAL" for 1 second
-  Serial.println("=== Setup Complete ===");
+  Serial.println("\n==== Setup Complete ====\n");
 }
 
 // Display number in centimeters
@@ -103,12 +103,32 @@ void updateAlarm(float altitude) {
   bool warn = (!danger) && ((altitude >= warn_HIGH) || (altitude <= warn_LOW));
   
   if (danger) {
-    digitalWrite(Alarm_Pin, (t / 200) % 2); // fast blink
+    digitalWrite(Alarm_Pin, HIGH);  // ON
   } else if (warn) {
-    digitalWrite(Alarm_Pin, (t / 600) % 2); // slow blink
+    bool ledOn = (t % 1200) < 600;  // True for first 600ms of each 1200ms cycle
+    digitalWrite(Alarm_Pin, ledOn); // slow blink
   } else {
     digitalWrite(Alarm_Pin, LOW); // off
   }
+  static unsigned long lastCall = 0;
+  static int callCount = 0;
+  
+  callCount++;
+  if (millis() - lastCall > 1000) {
+    Serial.print("updateAlarm called ");
+    Serial.print(callCount);
+    Serial.print(" times in last second, altitude=");
+    Serial.println(altitude);
+    Serial.print(", danger=");
+    Serial.print(danger);
+    Serial.print(", warn=");
+    Serial.print(warn);
+    Serial.print(", Alarm_Pin=");
+    Serial.println(digitalRead(Alarm_Pin));
+    callCount = 0;
+    lastCall = millis();
+  }
+
 }
 
 void loop() {
@@ -131,10 +151,10 @@ void loop() {
   lastButtonState = buttonState;
 
   // Read and display altitude
-  Serial.println("--- Reading sensor ---");
   float altitude = readAltitude();
-  Serial.print("Raw altitude: ");
-  Serial.println(altitude);
+  Serial.print("Raw rel. altitude: ");
+  Serial.print(altitude);
+  Serial.print(" m         ");
   
   if (altitude != -1000) {
     int altCm = (int)((altitude * 100.0) + 0.5); // Convert to centimeters and round
@@ -144,12 +164,7 @@ void loop() {
     
     displayNumber(altCm); // Display in centimeters (can show -999 to 9999 cm)
     updateAlarm(altitude);
-    
-    Serial.print("Altitude: ");
-    Serial.print(altitude, 2);
-    Serial.print(" m (");
-    Serial.print(altCm);
-    Serial.println(" cm)");
+   
   } else {
     Serial.println("Error reading altitude");
     display.showString("Err ");
