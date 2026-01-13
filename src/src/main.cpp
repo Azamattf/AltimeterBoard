@@ -33,12 +33,14 @@ void setup() {
   
   Serial.println("Initializing display...");
   display.begin();
-  display.setBrightness(BRIGHT_HIGH); // Maximum brightness
+  display.setBrightness(BRIGHT_LOW); // Maximum brightness
   display.showString("8888"); // Test all segments
   Serial.println("Display initialized - should show 8888");
   delay(2000);
   
   Serial.println("Initializing I2C...");
+  Wire.setSDA(18);  
+  Wire.setSCL(19);
   Wire.begin();
   delay(100);
 
