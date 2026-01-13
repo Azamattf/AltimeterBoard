@@ -10,7 +10,7 @@ const int DIO_PIN = 15;  // Data pin
 const int CAL_BUTTON_PIN = 2; // Calibration button 
 const int Alarm_Pin = 3; 
 
-MS5611 ms5611(0x77); // Use address 0x77 since PS/SDO is at 3V3
+MS5611 ms5611(0x76); // Use address 0x77 since PS/SDO is at 3V3
 TM1637TinyDisplay display(CLK_PIN, DIO_PIN);
 
 float referencePressure = 0;
@@ -33,7 +33,7 @@ void setup() {
   
   Serial.println("Initializing display...");
   display.begin();
-  display.setBrightness(BRIGHT_LOW); // Maximum brightness
+  display.setBrightness(BRIGHT_HIGH); // Maximum brightness
   display.showString("8888"); // Test all segments
   Serial.println("Display initialized - should show 8888");
   delay(2000);
