@@ -1,0 +1,11 @@
+{
+    "ROS2.distro": "rolling",
+    "python.autoComplete.extraPaths": [
+        "/opt/ros/rolling/opt/gz_math_vendor/lib/python",
+        "/opt/ros/rolling/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/opt/ros/rolling/opt/gz_math_vendor/lib/python",
+        "/opt/ros/rolling/lib/python3.12/site-packages"
+    ]
+}
