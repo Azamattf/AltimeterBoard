@@ -1,6 +1,6 @@
 #include <Wire.h>
 
-#define MS5611_ADDR 0x7  // 0x77 if CSB=3.3V
+#define MS5611_ADDR 0x76  // 0x77 if CSB=3.3V
 
 void setup() {
   Serial.begin(115200);
