@@ -4,13 +4,13 @@
 #include <TM1637TinyDisplay.h>
 
 // TM1637 Pins
-const int CLK_PIN = 13; // Clock pin
-const int DIO_PIN = 11;  // Data pin
+const int CLK_PIN = 14; // Clock pin
+const int DIO_PIN = 15;  // Data pin
 
 const int CAL_BUTTON_PIN = 2; // Calibration button 
 const int Alarm_Pin = 3; 
 
-MS5611 ms5611(0x76); // Use address 0x76 since PS is at GND
+MS5611 ms5611(0x77); // Use address 0x77 since PS/SDO is at 3V3
 TM1637TinyDisplay display(CLK_PIN, DIO_PIN);
 
 float referencePressure = 0;
@@ -22,38 +22,59 @@ const float Danger_HIGH = 40.0; // meters
 const float Danger_LOW = -15.0;  // meters
 
 void setup() {
+  Serial.begin(9600);
+  while (!Serial && millis() < 10000);
+  Serial.println("=== Altimeter Starting ===");
+  
   pinMode(CAL_BUTTON_PIN, INPUT_PULLUP);
   pinMode(Alarm_Pin, OUTPUT);
   digitalWrite(Alarm_Pin, LOW); // Ensure alarm starts OFF
+  Serial.println("Pins configured");
   
+  Serial.println("Initializing display...");
   display.begin();
   display.setBrightness(BRIGHT_HIGH); // Maximum brightness
+  display.showString("8888"); // Test all segments
+  Serial.println("Display initialized - should show 8888");
+  delay(2000);
   
+  Serial.println("Initializing I2C...");
   Wire.begin();
-  Serial.begin(9600);
-  delay(1000);
+  delay(100);
 
+  Serial.println("Looking for MS5611...");
   if (!ms5611.begin()) { 
     Serial.println("MS5611 not detected!");
     display.showString("Err ");
-    while (1); // Halt if sensor not found
+    
   }
+  Serial.println("MS5611 found!");
 
   // Show "CAL" on display during calibration
   display.showString("CAL ");
+  Serial.println("Calibrating...");
 
   // Wait for sensor to stabilize and take multiple readings
   delay(500);
   float pressureSum = 0;
   for (int i = 0; i < 10; i++) {
     ms5611.read();
-    pressureSum += ms5611.getPressure();
+    float p = ms5611.getPressure();
+    Serial.print("Reading ");
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.print(p);
+    Serial.println(" mbar");
+    pressureSum += p;
     delay(50);
   }
   referencePressure = pressureSum / 10.0; // Average of 10 readings
-  Serial.println("Altimeter calibrated (0 m)");
+  Serial.print("Altimeter calibrated (0 m), ref pressure: ");
+  Serial.print(referencePressure);
+  Serial.println(" mbar");
   
   delay(1000); // Show "CAL" for 1 second
+  Serial.println("=== Setup Complete ===");
 }
 
 // Display number in centimeters
@@ -97,7 +118,9 @@ void loop() {
     delay(50); // Debounce
     ms5611.read();
     referencePressure = ms5611.getPressure();
-    Serial.println("Recalibrated: altitude set to 0 m");
+    Serial.print("Recalibrated: altitude set to 0 m, new ref: ");
+    Serial.print(referencePressure);
+    Serial.println(" mbar");
     
     // Show "CAL" briefly
     display.showString("CAL ");
@@ -106,9 +129,17 @@ void loop() {
   lastButtonState = buttonState;
 
   // Read and display altitude
+  Serial.println("--- Reading sensor ---");
   float altitude = readAltitude();
+  Serial.print("Raw altitude: ");
+  Serial.println(altitude);
+  
   if (altitude != -1000) {
     int altCm = (int)((altitude * 100.0) + 0.5); // Convert to centimeters and round
+    Serial.print("Displaying: ");
+    Serial.print(altCm);
+    Serial.println(" cm");
+    
     displayNumber(altCm); // Display in centimeters (can show -999 to 9999 cm)
     updateAlarm(altitude);
     
