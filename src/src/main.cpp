@@ -156,7 +156,7 @@ void loop() {
   Serial.print(altitude);
   Serial.print(" m         ");
   
-  if (altitude != -1000) {
+  if (altitude <= -1000) {
     int altCm = (int)((altitude * 100.0) + 0.5); // Convert to centimeters and round
     Serial.print("Displaying: ");
     Serial.print(altCm);
