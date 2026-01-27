@@ -7,8 +7,15 @@
 
 const int errorInCm = 50;
 
-// TM1637 Pins
+// alpha for Low Pass Filter
+const float alpha = 0.03;
 
+// median filter
+#define MEDIAN_BUFFER_SIZE 5
+float medianBuffer[MEDIAN_BUFFER_SIZE];
+int medianIndex = 0;
+
+// TM1637 Pins
 const int CLK_PIN = 14; // Clock pin
 const int DIO_PIN = 15;  // Data pin
 

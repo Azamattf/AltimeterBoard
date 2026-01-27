@@ -29,8 +29,6 @@ void setup() {
   Wire.setSCL(19);
   Wire.begin();
 
- 
-
   if (!ms5611.begin()) {
 
     Serial.println("MS5611 Error");
@@ -56,42 +54,41 @@ void loop() {
   if (currentMillis - lastSensorRead >= SENSOR_INTERVAL) {
     lastSensorRead = currentMillis;
 
-      float tempReads[3] = {0.0};
+    // --- LOW PASS FILTER ---
+    // It blends 99% of the old value with 1% of the new value.
+    // It smooths out the "spikes" but still reacts to changes.
+    // float avgRead = (tempReads[0] + tempReads[1] + tempReads[2]) / 3.0;
 
-      // for(size_t i = 0; i < 3; i++) {
-      //   ms5611.read();
-      //   float rawPressure = ms5611.getPressure();
+    ms5611.read();
+    float rawPressure = ms5611.getPressure();
 
-      //   // Calculate raw altitude
-      //   float rawAltitude = 44330.0 * (1.0 - pow((rawPressure / referencePressure), 0.1903));
-      //   tempReads[i] = rawAltitude;
+    float rawAltitude = 44330.0 * (1.0 - pow((rawPressure / referencePressure), 0.1903));
 
-      //   delay(25);
-      // }
+    medianBuffer[medianIndex] = rawAltitude;
+    medianIndex = (medianIndex + 1) % MEDIAN_BUFFER_SIZE;
 
-      // if (tempReads[0] >= tempReads[1] && tempReads[1] >= tempReads[2] ||
-      //   tempReads[0] <= tempReads[1] && tempReads[1] <= tempReads[2]) {
+    float sorted[MEDIAN_BUFFER_SIZE]; // temp sorted array of last MEDIAN_BUFFER_SIZE samples
+    memcpy(sorted, medianBuffer, MEDIAN_BUFFER_SIZE * sizeof(float));
 
-          // --- LOW PASS FILTER ---
-          // This is the magic. It blends 95% of the old value with 5% of the new value.
-          // It smooths out the "spikes" but still reacts to changes.
-          // Adjust 0.05 up (0.1) for faster reaction, down (0.01) for smoother numbers.
-          // float avgRead = (tempReads[0] + tempReads[1] + tempReads[2]) / 3.0;
+    for(int i=0; i<MEDIAN_BUFFER_SIZE-1; i++) {
+        for(int j=0; j<MEDIAN_BUFFER_SIZE-i-1; j++) {
+            if(sorted[j] > sorted[j+1]) {
+                float temp = sorted[j];
+                sorted[j] = sorted[j+1];
+                sorted[j+1] = temp;
+            }
+        }
+    }
 
-          ms5611.read();
-          float rawPressure = ms5611.getPressure();
+    float medianAltitude = sorted[MEDIAN_BUFFER_SIZE / 2];
 
-          float rawAltitude = 44330.0 * (1.0 - pow((rawPressure / referencePressure), 0.1903));
-          smoothedAltitude = ((smoothedAltitude * 0.99) + (rawAltitude * 0.01));
-
-          delay(25);
-
-        // }
+    // smoothedAltitude = ((smoothedAltitude * (1 - alpha)) + (rawAltitude * alpha));
+    smoothedAltitude = ((smoothedAltitude * (1.0 - alpha)) + (medianAltitude * alpha));
+    
     // Check alarm instantly with every new reading
     updateAlarm(smoothedAltitude);
   }
 
-  // 3. Update Display (Slower, e.g., 4Hz - readable)
   if (currentMillis - lastDisplayUpdate >= DISPLAY_INTERVAL) {
     lastDisplayUpdate = currentMillis;
 
