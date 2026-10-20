@@ -1,6 +1,6 @@
 # AltimeterBoard
 
-This is a lab project aiming to build a Teensy-based barometric altimeter that displays relative altitude on a display.
+This is a lab project which involved building a Teensy-based barometric altimeter that displays relative altitude on a display.
 
 Organization: Technical University of Munich
 
